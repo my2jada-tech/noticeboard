@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Container Portal - Beaches Turks & Caicos</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+        :root {
+            --primary: #0f4c75; --primary-dark: #093a57; --accent: #00a8cc; --accent-light: #00d4ff;
+            --warning: #f39c12; --danger: #e74c3c; --success: #27ae60;
+            --bg-dark: #1a1a2e; --bg-card: #16213e; --bg-input: #0f3460;
+            --text-primary: #ffffff; --text-secondary: #a8b2c1; --border: #2a3f5f;
+            --food: #e67e22; --beverage: #9b59b6; --water: #3498db; --general: #1abc9c; --projects: #e74c3c;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'DM Sans', sans-serif; background: linear-gradient(135deg, var(--bg-dark) 0%, #0f0f23 100%); min-height: 100vh; color: var(--text-primary); }
+        
+        .header { background: linear-gradient(90deg, var(--primary-dark), var(--primary)); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 20px rgba(0,0,0,0.3); position: sticky; top: 0; z-index: 100; flex-wrap: wrap; gap: 1rem; }
+        .logo { display: flex; align-items: center; gap: 1rem; }
+        .logo-icon { width: 60px; height: 60px; background: linear-gradient(135deg, var(--accent), var(--accent-light)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 2rem; }
+        .logo-text h1 { font-size: 1.8rem; font-weight: 700; }
+        .logo-text span { font-size: 0.95rem; color: var(--accent-light); font-family: 'Space Mono', monospace; letter-spacing: 2px; }
+        .header-actions { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+        
+        .sync-badge { padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }
+        .sync-badge.connected { background: rgba(39,174,96,0.2); border: 2px solid var(--success); color: var(--success); }
+        .sync-badge.disconnected { background: rgba(231,76,60,0.2); border: 2px solid var(--danger); color: var(--danger); }
+        .sync-badge.syncing { background: rgba(243,156,18,0.2); border: 2px solid var(--warning); color: var(--warning); animation: pulse 1s infinite; }
+        @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.6; } }
+        
+        .auth-btn { padding: 0.6rem 1.2rem; border-radius: 8px; border: none; font-family: 'DM Sans', sans-serif; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; }
+        .auth-btn.signin { background: #4285f4; color: white; }
+        .auth-btn.signin:hover { background: #3367d6; }
+        .auth-btn.signout { background: var(--bg-input); color: var(--text-secondary); border: 1px solid var(--border); }
+        
+        .month-selector { display: flex; align-items: center; gap: 0.5rem; background: var(--bg-card); padding: 0.6rem 1rem; border-radius: 10px; border: 1px solid var(--border); }
+        .month-selector select { background: var(--bg-input); border: 1px solid var(--border); color: var(--text-primary); padding: 0.5rem; border-radius: 6px; font-family: 'DM Sans', sans-serif; }
+        .location-badge { background: rgba(0,168,204,0.2); border: 1px solid var(--accent); padding: 0.5rem 0.8rem; border-radius: 20px; font-size: 0.9rem; }
+        
+        .nav-tabs { display: flex; background: var(--bg-card); padding: 0.75rem; gap: 0.25rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+        .nav-tab { padding: 0.7rem 1rem; border: none; background: transparent; color: var(--text-secondary); font-family: 'DM Sans', sans-serif; font-size: 0.95rem; font-weight: 500; cursor: pointer; border-radius: 8px; display: flex; align-items: center; gap: 0.4rem; }
+        .nav-tab:hover { background: rgba(255,255,255,0.05); color: var(--text-primary); }
+        .nav-tab.active { background: var(--accent); color: white; }
+        .nav-tab.active[data-category="food"] { background: var(--food); }
+        .nav-tab.active[data-category="beverage"] { background: var(--beverage); }
+        .nav-tab.active[data-category="water"] { background: var(--water); }
+        .nav-tab.active[data-category="general"] { background: var(--general); }
+        .nav-tab.active[data-category="projects"] { background: var(--projects); }
+        .tab-count { background: rgba(255,255,255,0.2); padding: 0.2rem 0.5rem; border-radius: 10px; font-size: 0.85rem; font-family: 'Space Mono', monospace; }
+        
+        .main-content { padding: 1.5rem; }
+        .auth-required { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center; }
+        .auth-required h2 { font-size: 2rem; margin-bottom: 1rem; color: var(--accent); }
+        .auth-required p { color: var(--text-secondary); margin-bottom: 2rem; max-width: 500px; }
+        .auth-required .auth-btn { font-size: 1.1rem; padding: 1rem 2rem; }
+        
+        .month-banner { background: linear-gradient(135deg, var(--bg-card), var(--bg-input)); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.5rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+        .month-info { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+        .month-info h2 { font-size: 1.5rem; color: var(--accent-light); }
+        .carried-info { background: rgba(243,156,18,0.2); border: 1px solid var(--warning); padding: 0.3rem 0.6rem; border-radius: 8px; font-size: 0.9rem; color: var(--warning); }
+        .month-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        
+        .btn { padding: 0.6rem 0.9rem; border: none; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: 0.95rem; cursor: pointer; display: flex; align-items: center; gap: 0.4rem; transition: all 0.2s; }
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-primary:hover { background: var(--accent-light); }
+        .btn-secondary { background: var(--bg-input); color: var(--text-primary); border: 1px solid var(--border); }
+        .btn-success { background: var(--success); color: white; }
+        .btn-warning { background: var(--warning); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        
+        .dashboard-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem; margin-bottom: 1.5rem; }
+        .stat-card { background: var(--bg-card); border-radius: 10px; padding: 1rem; border: 1px solid var(--border); position: relative; overflow: hidden; }
+        .stat-card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; }
+        .stat-card.food::before { background: var(--food); }
+        .stat-card.beverage::before { background: var(--beverage); }
+        .stat-card.water::before { background: var(--water); }
+        .stat-card.general::before { background: var(--general); }
+        .stat-card.projects::before { background: var(--projects); }
+        .stat-card.total::before { background: var(--accent); }
+        .stat-card.carried::before { background: var(--warning); }
+        .stat-card.new::before { background: var(--success); }
+        .stat-card.returned::before { background: #7f8c8d; }
+        .stat-card.pending::before { background: var(--danger); }
+        .stat-label { font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; }
+        .stat-value { font-size: 1.6rem; font-weight: 700; font-family: 'Space Mono', monospace; }
+        .stat-card.food .stat-value { color: var(--food); }
+        .stat-card.beverage .stat-value { color: var(--beverage); }
+        .stat-card.water .stat-value { color: var(--water); }
+        .stat-card.general .stat-value { color: var(--general); }
+        .stat-card.projects .stat-value { color: var(--projects); }
+        .stat-card.total .stat-value { color: var(--accent); }
+        .stat-card.carried .stat-value { color: var(--warning); }
+        .stat-card.new .stat-value { color: var(--success); }
+        .stat-card.returned .stat-value { color: #7f8c8d; }
+        .stat-card.pending .stat-value { color: var(--danger); }
+        
+        .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem; }
+        .search-box { display: flex; align-items: center; background: var(--bg-input); border: 1px solid var(--border); border-radius: 8px; padding: 0.6rem 0.8rem; width: 250px; }
+        .search-box input { background: transparent; border: none; color: var(--text-primary); font-family: 'DM Sans', sans-serif; width: 100%; outline: none; }
+        .search-box input::placeholder { color: var(--text-secondary); }
+        
+        .table-container { background: var(--bg-card); border-radius: 10px; border: 1px solid var(--border); overflow: hidden; }
+        .table-wrapper { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        thead { background: var(--bg-input); }
+        th { padding: 0.8rem 0.5rem; text-align: left; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; white-space: nowrap; }
+        td { padding: 0.6rem 0.4rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        tr:hover { background: rgba(0,168,204,0.05); }
+        tr.carried-row { background: rgba(243,156,18,0.05); }
+        
+        .status-badge { padding: 0.3rem 0.5rem; border-radius: 15px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; white-space: nowrap; }
+        .status-warehouse-release { background: rgba(127,140,141,0.2); color: #95a5a6; }
+        .status-prealert-received { background: rgba(241,196,15,0.2); color: #f1c40f; }
+        .status-vessel-arrived { background: rgba(52,73,94,0.2); color: #778ca3; }
+        .status-bills-received { background: rgba(52,152,219,0.2); color: #3498db; }
+        .status-delivery-requested { background: rgba(243,156,18,0.2); color: var(--warning); }
+        .status-on-property { background: rgba(155,89,182,0.2); color: #9b59b6; }
+        .status-goods-offloaded { background: rgba(0,212,255,0.2); color: var(--accent-light); }
+        .status-returned { background: rgba(39,174,96,0.2); color: var(--success); }
+        
+        .category-badge { padding: 0.25rem 0.5rem; border-radius: 6px; font-size: 0.75rem; font-weight: 600; }
+        .category-food { background: rgba(230,126,34,0.2); color: var(--food); }
+        .category-beverage { background: rgba(155,89,182,0.2); color: var(--beverage); }
+        .category-water { background: rgba(52,152,219,0.2); color: var(--water); }
+        .category-general { background: rgba(26,188,156,0.2); color: var(--general); }
+        .category-projects { background: rgba(231,76,60,0.2); color: var(--projects); }
+        
+        .carry-badge { background: rgba(243,156,18,0.3); color: var(--warning); padding: 0.2rem 0.4rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600; margin-left: 0.3rem; }
+        .row-actions { display: flex; gap: 0.2rem; }
+        .action-btn { padding: 0.2rem 0.4rem; border: none; border-radius: 4px; cursor: pointer; background: transparent; color: var(--text-secondary); font-size: 0.9rem; }
+        .action-btn:hover { background: var(--bg-input); color: var(--text-primary); }
+        
+        .alert-bar { background: rgba(231,76,60,0.1); border: 1px solid var(--danger); border-radius: 8px; padding: 0.6rem 0.8rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; color: var(--danger); font-size: 0.9rem; }
+        .alert-bar.warning { background: rgba(243,156,18,0.1); border-color: var(--warning); color: var(--warning); }
+        
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+        .modal-overlay.active { display: flex; }
+        .modal { background: var(--bg-card); border-radius: 14px; width: 95%; max-width: 800px; max-height: 90vh; overflow-y: auto; border: 1px solid var(--border); }
+        .modal-header { padding: 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .modal-header h2 { font-size: 1.5rem; display: flex; align-items: center; gap: 0.5rem; }
+        .modal-close { background: transparent; border: none; color: var(--text-secondary); font-size: 1.5rem; cursor: pointer; }
+        .modal-body { padding: 1rem; }
+        .modal-footer { padding: 1rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 0.5rem; }
+        
+        .form-section { margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border); }
+        .form-section:last-child { border-bottom: none; }
+        .form-section-title { font-size: 0.9rem; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem; font-weight: 600; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.6rem; }
+        .form-group { display: flex; flex-direction: column; gap: 0.25rem; }
+        .form-group.full-width { grid-column: 1 / -1; }
+        .form-group label { font-size: 0.85rem; color: var(--text-secondary); }
+        .form-group input, .form-group select, .form-group textarea { padding: 0.5rem; background: var(--bg-input); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-family: 'DM Sans', sans-serif; font-size: 0.9rem; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--accent); }
+        .checkbox-group { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+        .checkbox-item { display: flex; align-items: center; gap: 0.3rem; padding: 0.3rem 0.5rem; background: var(--bg-input); border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .empty-state { text-align: center; padding: 2rem; color: var(--text-secondary); }
+        .empty-state-icon { font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.5; }
+        
+        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 2000; flex-direction: column; }
+        .loading-overlay.active { display: flex; }
+        .spinner { width: 50px; height: 50px; border: 4px solid var(--bg-card); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text { margin-top: 1rem; color: var(--text-primary); }
+        
+        @media (max-width: 768px) {
+            .header { padding: 0.75rem 1rem; }
+            .logo-text h1 { font-size: 1.3rem; }
+            .main-content { padding: 1rem; }
+            .search-box { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-overlay" id="loading"><div class="spinner"></div><div class="loading-text" id="loading-text">Loading...</div></div>
+    
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon">📦</div>
+            <div class="logo-text"><h1>Container Portal</h1><span>BEACHES TURKS & CAICOS</span></div>
+        </div>
+        <div class="header-actions">
+            <div class="sync-badge disconnected" id="sync-badge"><span id="sync-icon">⚫</span><span id="sync-text">Not Connected</span></div>
+            <button class="auth-btn signin" id="auth-btn" onclick="handleAuth()">🔐 Sign in with Google</button>
+            <div class="month-selector">
+                <label>📅</label>
+                <select id="month-select" onchange="changeMonth()"></select>
+                <select id="year-select" onchange="changeMonth()"></select>
+            </div>
+            <div class="location-badge">📍 TCI</div>
+        </div>
+    </header>
+    
+    <nav class="nav-tabs">
+        <button class="nav-tab active" data-category="dashboard" onclick="switchTab('dashboard')">📊 Dashboard</button>
+        <button class="nav-tab" data-category="food" onclick="switchTab('food')">🍽️ Food <span class="tab-count" id="food-count">0</span></button>
+        <button class="nav-tab" data-category="beverage" onclick="switchTab('beverage')">🍷 Beverage <span class="tab-count" id="beverage-count">0</span></button>
+        <button class="nav-tab" data-category="water" onclick="switchTab('water')">💧 Water <span class="tab-count" id="water-count">0</span></button>
+        <button class="nav-tab" data-category="general" onclick="switchTab('general')">📦 General <span class="tab-count" id="general-count">0</span></button>
+        <button class="nav-tab" data-category="projects" onclick="switchTab('projects')">🔧 Projects <span class="tab-count" id="projects-count">0</span></button>
+    </nav>
+    
+    <main class="main-content">
+        <!-- Auth Required Screen -->
+        <div id="auth-required" class="auth-required">
+            <h2>☁️ Google Sheets Connected</h2>
+            <p>Sign in with your Google account to sync containers with Google Sheets. Your data will be stored in the cloud and accessible from any device.</p>
+            <button class="auth-btn signin" onclick="handleAuth()">🔐 Sign in with Google</button>
+        </div>
+        
+        <!-- Main App Content (hidden until auth) -->
+        <div id="app-content" style="display: none;">
+            <div class="month-banner">
+                <div class="month-info">
+                    <h2 id="current-month-display">January 2026</h2>
+                    <div class="carried-info" id="carried-info" style="display:none;">📥 <span id="carried-count">0</span> carried</div>
+                </div>
+                <div class="month-actions">
+                    <button class="btn btn-primary" onclick="syncData()">🔄 Sync</button>
+                    <button class="btn btn-warning" onclick="generateReport()">📄 Report</button>
+                    <button class="btn btn-success" onclick="carryForward()">➡️ Carry Forward</button>
+                    <button class="btn btn-secondary" onclick="exportCSV()">📥 CSV</button>
+                </div>
+            </div>
+            
+            <!-- Dashboard Tab -->
+            <div id="dashboard-tab" class="tab-content active">
+                <div id="alerts-container"></div>
+                <div class="dashboard-stats">
+                    <div class="stat-card total"><div class="stat-label">Total</div><div class="stat-value" id="stat-total">0</div></div>
+                    <div class="stat-card carried"><div class="stat-label">Carried</div><div class="stat-value" id="stat-carried">0</div></div>
+                    <div class="stat-card new"><div class="stat-label">New</div><div class="stat-value" id="stat-new">0</div></div>
+                    <div class="stat-card returned"><div class="stat-label">Returned</div><div class="stat-value" id="stat-returned">0</div></div>
+                    <div class="stat-card pending"><div class="stat-label">Pending</div><div class="stat-value" id="stat-pending">0</div></div>
+                </div>
+                <div class="dashboard-stats">
+                    <div class="stat-card food"><div class="stat-label">Food</div><div class="stat-value" id="stat-food">0</div></div>
+                    <div class="stat-card beverage"><div class="stat-label">Beverage</div><div class="stat-value" id="stat-beverage">0</div></div>
+                    <div class="stat-card water"><div class="stat-label">Water</div><div class="stat-value" id="stat-water">0</div></div>
+                    <div class="stat-card general"><div class="stat-label">General</div><div class="stat-value" id="stat-general">0</div></div>
+                    <div class="stat-card projects"><div class="stat-label">Projects</div><div class="stat-value" id="stat-projects">0</div></div>
+                </div>
+                <h3 style="margin:1rem 0 0.5rem;color:var(--text-secondary);font-size:1rem;">📋 All Containers</h3>
+                <div class="table-container"><div class="table-wrapper">
+                    <table><thead><tr><th>Category</th><th>Container #</th><th>Type</th><th>Status</th><th>Arrival</th><th>Carrier</th><th>Exp Return</th><th>Actions</th></tr></thead>
+                    <tbody id="dashboard-tbody"></tbody></table>
+                </div></div>
+            </div>
+            
+            <!-- Category Tabs -->
+            <div id="food-tab" class="tab-content">
+                <div class="toolbar"><div class="search-box">🔍 <input type="text" placeholder="Search..." onkeyup="filterTable('food')"></div><button class="btn btn-primary" onclick="openModal('food')">➕ Add Container</button></div>
+                <div class="table-container"><div class="table-wrapper"><table><thead><tr><th>Pre-Alert</th><th>Arrival</th><th>Container #</th><th>BOL</th><th>Carrier</th><th>Size</th><th>Type</th><th>Contents</th><th>Status</th><th>Exp Return</th><th>Actions</th></tr></thead><tbody id="food-tbody"></tbody></table></div></div>
+            </div>
+            <div id="beverage-tab" class="tab-content">
+                <div class="toolbar"><div class="search-box">🔍 <input type="text" placeholder="Search..." onkeyup="filterTable('beverage')"></div><button class="btn btn-primary" onclick="openModal('beverage')">➕ Add Container</button></div>
+                <div class="table-container"><div class="table-wrapper"><table><thead><tr><th>Pre-Alert</th><th>Arrival</th><th>Container #</th><th>BOL</th><th>Carrier</th><th>Size</th><th>Type</th><th>Status</th><th>Exp Return</th><th>Actions</th></tr></thead><tbody id="beverage-tbody"></tbody></table></div></div>
+            </div>
+            <div id="water-tab" class="tab-content">
+                <div class="toolbar"><div class="search-box">🔍 <input type="text" placeholder="Search..." onkeyup="filterTable('water')"></div><button class="btn btn-primary" onclick="openModal('water')">➕ Add Container</button></div>
+                <div class="table-container"><div class="table-wrapper"><table><thead><tr><th>Pre-Alert</th><th>Arrival</th><th>Container #</th><th>BOL</th><th>Carrier</th><th>Size</th><th>Type</th><th>Status</th><th>Exp Return</th><th>Actions</th></tr></thead><tbody id="water-tbody"></tbody></table></div></div>
+            </div>
+            <div id="general-tab" class="tab-content">
+                <div class="toolbar"><div class="search-box">🔍 <input type="text" placeholder="Search..." onkeyup="filterTable('general')"></div><button class="btn btn-primary" onclick="openModal('general')">➕ Add Container</button></div>
+                <div class="table-container"><div class="table-wrapper"><table><thead><tr><th>WH Release</th><th>Pre-Alert</th><th>Arrival</th><th>Container #</th><th>BOL</th><th>Carrier</th><th>Size</th><th>Contents</th><th>Status</th><th>Exp Return</th><th>Actions</th></tr></thead><tbody id="general-tbody"></tbody></table></div></div>
+            </div>
+            <div id="projects-tab" class="tab-content">
+                <div class="toolbar"><div class="search-box">🔍 <input type="text" placeholder="Search..." onkeyup="filterTable('projects')"></div><button class="btn btn-primary" onclick="openModal('projects')">➕ Add Container</button></div>
+                <div class="table-container"><div class="table-wrapper"><table><thead><tr><th>WH Release</th><th>Pre-Alert</th><th>Arrival</th><th>Container #</th><th>BOL</th><th>Carrier</th><th>Size</th><th>Details</th><th>Status</th><th>Exp Return</th><th>Actions</th></tr></thead><tbody id="projects-tbody"></tbody></table></div></div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Add/Edit Modal -->
+    <div class="modal-overlay" id="container-modal">
+        <div class="modal">
+            <div class="modal-header"><h2>📦 <span id="modal-title">Add Container</span></h2><button class="modal-close" onclick="closeModal()">×</button></div>
+            <div class="modal-body">
+                <form id="container-form">
+                    <div class="form-section">
+                        <div class="form-section-title">📋 Basic Info</div>
+                        <div class="form-grid">
+                            <div class="form-group"><label>Category *</label><select id="form-category" required onchange="toggleFormFields()"><option value="">Select</option><option value="food">Food</option><option value="beverage">Beverage</option><option value="water">Water</option><option value="general">General</option><option value="projects">Projects</option></select></div>
+                            <div class="form-group"><label>Container # *</label><input type="text" id="form-containerNum" required></div>
+                            <div class="form-group"><label>BOL</label><input type="text" id="form-bol"></div>
+                            <div class="form-group"><label>Size *</label><select id="form-size" required><option value="">Select</option><option value="20FT">20 FT</option><option value="40FT">40 FT</option><option value="LCL">LCL</option><option value="20FT TRAILER FLAT BED">20FT Trailer Flat Bed</option><option value="40FT TRAILER FLAT BED">40FT Trailer Flat Bed</option></select></div>
+                            <div class="form-group"><label>Type *</label><select id="form-type" required><option value="">Select</option><option value="DRY">DRY</option><option value="REEFER">REEFER</option><option value="SPECIAL EQUIPMENT FLATBED">Special Equipment Flatbed</option></select></div>
+                            <div class="form-group"><label>Status *</label><select id="form-status" required></select></div>
+                        </div>
+                    </div>
+                    <div class="form-section" id="warehouse-section" style="display:none;">
+                        <div class="form-section-title">🏭 Warehouse Release</div>
+                        <div class="form-grid">
+                            <div class="form-group"><label>WH Release Date</label><input type="date" id="form-whReleaseDate"></div>
+                            <div class="form-group"><label>Proposed Sailing</label><input type="date" id="form-proposedSailing"></div>
+                        </div>
+                    </div>
+                    <div class="form-section" id="prealert-section" style="display:none;">
+                        <div class="form-section-title">📨 Pre-Alert</div>
+                        <div class="form-grid">
+                            <div class="form-group"><label>Pre-Alert Date</label><input type="date" id="form-prealertDate"></div>
+                            <div class="form-group"><label>Actual Sailing</label><input type="date" id="form-actualSailing"></div>
+                        </div>
+                    </div>
+                    <div class="form-section">
+                        <div class="form-section-title">🚢 Shipping</div>
+                        <div class="form-grid">
+                            <div class="form-group"><label>Carrier *</label><select id="form-carrier" required><option value="">Select</option><option value="Seacor">Seacor</option><option value="Tropical Shipping">Tropical Shipping</option><option value="King Ocean">King Ocean</option><option value="Crowley">Crowley</option></select></div>
+                            <div class="form-group"><label>Broker</label><select id="form-broker"><option value="">Select</option><option value="Air & Sea">Air & Sea</option><option value="Cargo Express">Cargo Express</option><option value="Carsea">Carsea</option></select></div>
+                            <div class="form-group"><label>Arrival Date</label><input type="date" id="form-arrivalDate" onchange="calcExpReturn()"></div>
+                            <div class="form-group"><label>Free Days</label><input type="number" id="form-freeDays" onchange="calcExpReturn()"></div>
+                        </div>
+                    </div>
+                    <div class="form-section">
+                        <div class="form-section-title">📅 Return</div>
+                        <div class="form-grid">
+                            <div class="form-group"><label>Expected Return</label><input type="date" id="form-expectedReturn"></div>
+                            <div class="form-group"><label>Actual Return</label><input type="date" id="form-actualReturn" onchange="calcDetentionDays()"></div>
+                            <div class="form-group"><label>Detention Days</label><input type="number" id="form-detentionDays" readonly></div>
+                            <div class="form-group"><label>Broker Invoice #</label><input type="text" id="form-invoices"></div>
+                        </div>
+                    </div>
+                    <div class="form-section" id="food-contents-section" style="display:none;">
+                        <div class="form-section-title">🍽️ Contents</div>
+                        <div class="checkbox-group">
+                            <label class="checkbox-item"><input type="checkbox" value="Frozen"> ❄️ Frozen</label>
+                            <label class="checkbox-item"><input type="checkbox" value="Dairy"> 🥛 Dairy</label>
+                            <label class="checkbox-item"><input type="checkbox" value="Produce"> 🥬 Produce</label>
+                            <label class="checkbox-item"><input type="checkbox" value="Grocery"> 🛒 Grocery</label>
+                        </div>
+                    </div>
+                    <div class="form-section" id="contents-section" style="display:none;">
+                        <div class="form-section-title" id="contents-title">📦 Contents</div>
+                        <div class="form-group full-width"><textarea id="form-contentsSummary" rows="2" placeholder="Describe contents..."></textarea></div>
+                    </div>
+                    <div class="form-section">
+                        <div class="form-section-title">💬 Notes</div>
+                        <div class="form-group full-width"><textarea id="form-comments" rows="2" placeholder="Additional notes..."></textarea></div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveContainer()">💾 Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =============================================
+        // CONFIGURATION
+        // =============================================
+        const CONFIG = {
+            CLIENT_ID: '1092790933079-0fr8osm6110id36idcvg1g2p2l1qvqi2.apps.googleusercontent.com',
+            API_KEY: 'AIzaSyA1mb8gU3EZCRzfMWk8LuQyWiIJYATZFZM',
+            SHEET_ID: '1JO0l5Aaqem1l8S8_6xzQt3-VP25Nxjqwa8A2dJC2l-E',
+            SHEET_NAME: 'Containers',
+            SCOPES: 'https://www.googleapis.com/auth/spreadsheets'
+        };
+        
+        const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+        const CARRIER_DAYS = { 'Seacor': 16, 'Tropical Shipping': 30, 'King Ocean': 14, 'Crowley': 21 };
+        const STATUS_OPTIONS = {
+            food: ['PREALERT_RECEIVED','VESSEL_ARRIVED','BILLS_RECEIVED','DELIVERY_REQUESTED','ON_PROPERTY','GOODS_OFFLOADED','RETURNED'],
+            beverage: ['PREALERT_RECEIVED','VESSEL_ARRIVED','BILLS_RECEIVED','DELIVERY_REQUESTED','ON_PROPERTY','GOODS_OFFLOADED','RETURNED'],
+            water: ['PREALERT_RECEIVED','VESSEL_ARRIVED','BILLS_RECEIVED','DELIVERY_REQUESTED','ON_PROPERTY','GOODS_OFFLOADED','RETURNED'],
+            general: ['WAREHOUSE_RELEASE','PREALERT_RECEIVED','VESSEL_ARRIVED','BILLS_RECEIVED','DELIVERY_REQUESTED','ON_PROPERTY','GOODS_OFFLOADED','RETURNED'],
+            projects: ['WAREHOUSE_RELEASE','PREALERT_RECEIVED','VESSEL_ARRIVED','BILLS_RECEIVED','DELIVERY_REQUESTED','ON_PROPERTY','GOODS_OFFLOADED','RETURNED']
+        };
+        const STATUS_LABELS = {
+            'WAREHOUSE_RELEASE': 'WH Release', 'PREALERT_RECEIVED': 'Pre-Alert', 'VESSEL_ARRIVED': 'Arrived',
+            'BILLS_RECEIVED': 'Bills Rcvd', 'DELIVERY_REQUESTED': 'Delivery Req', 'ON_PROPERTY': 'On Property',
+            'GOODS_OFFLOADED': 'Offloaded', 'RETURNED': 'Returned'
+        };
+        const COLUMNS = ['id','month_key','category','containerNum','bol','size','type','status','carrier','broker','arrivalDate','freeDays','expectedReturn','actualReturn','detentionDays','invoices','contents','contentsSummary','comments','isCarried','carriedFrom','whReleaseDate','proposedSailing','prealertDate','actualSailing','lastUpdated'];
+        
+        // =============================================
+        // STATE
+        // =============================================
+        let tokenClient;
+        let accessToken = null;
+        let allContainers = [];
+        let currentMonth = new Date().getMonth();
+        let currentYear = new Date().getFullYear();
+        let editingId = null;
+        
+        // =============================================
+        // INITIALIZATION
+        // =============================================
+        window.onload = function() {
+            initMonthSelector();
+            initGoogleAuth();
+        };
+        
+        function initMonthSelector() {
+            const ms = document.getElementById('month-select'), ys = document.getElementById('year-select');
+            MONTHS.forEach((m,i) => { ms.innerHTML += `<option value="${i}" ${i===currentMonth?'selected':''}>${m}</option>`; });
+            for(let y=2024;y<=2030;y++) { ys.innerHTML += `<option value="${y}" ${y===currentYear?'selected':''}>${y}</option>`; }
+        }
+        
+        function initGoogleAuth() {
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: CONFIG.CLIENT_ID,
+                scope: CONFIG.SCOPES,
+                callback: (response) => {
+                    if (response.access_token) {
+                        accessToken = response.access_token;
+                        onSignIn();
+                    }
+                },
+            });
+        }
+        
+        function handleAuth() {
+            if (accessToken) {
+                // Sign out
+                accessToken = null;
+                google.accounts.oauth2.revoke(accessToken);
+                onSignOut();
+            } else {
+                // Sign in
+                tokenClient.requestAccessToken();
+            }
+        }
+        
+        function onSignIn() {
+            document.getElementById('auth-required').style.display = 'none';
+            document.getElementById('app-content').style.display = 'block';
+            document.getElementById('auth-btn').innerHTML = '🚪 Sign Out';
+            document.getElementById('auth-btn').classList.remove('signin');
+            document.getElementById('auth-btn').classList.add('signout');
+            updateSyncBadge('connected', '☁️ Connected');
+            syncData();
+        }
+        
+        function onSignOut() {
+            document.getElementById('auth-required').style.display = 'flex';
+            document.getElementById('app-content').style.display = 'none';
+            document.getElementById('auth-btn').innerHTML = '🔐 Sign in with Google';
+            document.getElementById('auth-btn').classList.add('signin');
+            document.getElementById('auth-btn').classList.remove('signout');
+            updateSyncBadge('disconnected', '⚫ Not Connected');
+        }
+        
+        function updateSyncBadge(status, text) {
+            const badge = document.getElementById('sync-badge');
+            badge.className = 'sync-badge ' + status;
+            document.getElementById('sync-text').textContent = text;
+        }
+        
+        // =============================================
+        // GOOGLE SHEETS API
+        // =============================================
+        async function syncData() {
+            if (!accessToken) return;
+            showLoading('Syncing with Google Sheets...');
+            updateSyncBadge('syncing', '🔄 Syncing...');
+            
+            try {
+                const response = await fetch(
+                    `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${CONFIG.SHEET_NAME}?key=${CONFIG.API_KEY}`,
+                    { headers: { 'Authorization': `Bearer ${accessToken}` } }
+                );
+                
+                if (!response.ok) throw new Error('Failed to fetch');
+                
+                const data = await response.json();
+                if (data.values && data.values.length > 1) {
+                    const headers = data.values[0];
+                    allContainers = data.values.slice(1).map(row => {
+                        const obj = {};
+                        headers.forEach((h, i) => {
+                            let val = row[i] || '';
+                            if (h === 'contents') { try { val = JSON.parse(val); } catch { val = []; } }
+                            if (h === 'isCarried') val = val === 'TRUE' || val === true;
+                            if (h === 'freeDays' || h === 'detentionDays') val = parseInt(val) || 0;
+                            obj[h] = val;
+                        });
+                        return obj;
+                    });
+                } else {
+                    allContainers = [];
+                }
+                
+                updateSyncBadge('connected', '☁️ Synced');
+                renderAll();
+            } catch (err) {
+                console.error(err);
+                updateSyncBadge('disconnected', '❌ Error');
+                alert('Sync failed: ' + err.message);
+            }
+            
+            hideLoading();
+        }
+        
+        async function writeToSheets() {
+            if (!accessToken) return;
+            showLoading('Saving to Google Sheets...');
+            
+            try {
+                // Prepare all data as rows
+                const rows = [COLUMNS]; // Headers first
+                allContainers.forEach(c => {
+                    rows.push(COLUMNS.map(col => {
+                        let val = c[col] || '';
+                        if (col === 'contents') val = JSON.stringify(val || []);
+                        if (col === 'isCarried') val = val ? 'TRUE' : 'FALSE';
+                        return val;
+                    }));
+                });
+                
+                // Clear and write
+                await fetch(
+                    `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${CONFIG.SHEET_NAME}?key=${CONFIG.API_KEY}`,
+                    {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `Bearer ${accessToken}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            range: CONFIG.SHEET_NAME,
+                            majorDimension: 'ROWS',
+                            values: rows
+                        })
+                    }
+                );
+                
+                updateSyncBadge('connected', '☁️ Saved');
+            } catch (err) {
+                console.error(err);
+                alert('Failed to save: ' + err.message);
+            }
+            
+            hideLoading();
+        }
+        
+        // =============================================
+        // DATA HELPERS
+        // =============================================
+        function getMonthKey() { return `${currentYear}-${String(currentMonth+1).padStart(2,'0')}`; }
+        function getCurrentContainers() { return allContainers.filter(c => c.month_key === getMonthKey()); }
+        
+        function changeMonth() {
+            currentMonth = parseInt(document.getElementById('month-select').value);
+            currentYear = parseInt(document.getElementById('year-select').value);
+            document.getElementById('current-month-display').textContent = `${MONTHS[currentMonth]} ${currentYear}`;
+            renderAll();
+        }
+        
+        // =============================================
+        // RENDERING
+        // =============================================
+        function renderAll() {
+            const c = getCurrentContainers();
+            renderDashboard(c);
+            ['food','beverage','water','general','projects'].forEach(cat => renderCategoryTable(cat, c));
+            updateStats(c);
+            renderAlerts(c);
+            updateCarriedInfo(c);
+            document.getElementById('current-month-display').textContent = `${MONTHS[currentMonth]} ${currentYear}`;
+        }
+        
+        function updateStats(c) {
+            document.getElementById('stat-total').textContent = c.length;
+            document.getElementById('stat-carried').textContent = c.filter(x => x.isCarried).length;
+            document.getElementById('stat-new').textContent = c.filter(x => !x.isCarried).length;
+            document.getElementById('stat-returned').textContent = c.filter(x => x.status === 'RETURNED').length;
+            document.getElementById('stat-pending').textContent = c.filter(x => x.status !== 'RETURNED').length;
+            document.getElementById('stat-food').textContent = c.filter(x => x.category === 'food').length;
+            document.getElementById('stat-beverage').textContent = c.filter(x => x.category === 'beverage').length;
+            document.getElementById('stat-water').textContent = c.filter(x => x.category === 'water').length;
+            document.getElementById('stat-general').textContent = c.filter(x => x.category === 'general').length;
+            document.getElementById('stat-projects').textContent = c.filter(x => x.category === 'projects').length;
+            ['food','beverage','water','general','projects'].forEach(cat => {
+                document.getElementById(`${cat}-count`).textContent = c.filter(x => x.category === cat).length;
+            });
+        }
+        
+        function updateCarriedInfo(c) {
+            const carried = c.filter(x => x.isCarried).length;
+            document.getElementById('carried-info').style.display = carried > 0 ? 'block' : 'none';
+            document.getElementById('carried-count').textContent = carried;
+        }
+        
+        function renderAlerts(c) {
+            const today = new Date(), alerts = [];
+            c.forEach(x => {
+                if (x.status === 'RETURNED' || !x.expectedReturn) return;
+                const days = Math.ceil((new Date(x.expectedReturn) - today) / 86400000);
+                if (days < 0) alerts.push({ type: 'danger', msg: `⚠️ OVERDUE: ${x.containerNum} - due ${formatDate(x.expectedReturn)}` });
+                else if (days <= 3) alerts.push({ type: 'warning', msg: `⏰ ${x.containerNum} due in ${days} days` });
+            });
+            document.getElementById('alerts-container').innerHTML = alerts.slice(0,3).map(a => 
+                `<div class="alert-bar ${a.type === 'warning' ? 'warning' : ''}">${a.msg}</div>`
+            ).join('');
+        }
+        
+        function renderDashboard(c) {
+            const tbody = document.getElementById('dashboard-tbody');
+            if (c.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><div class="empty-state-icon">📭</div>No containers</td></tr>';
+                return;
+            }
+            tbody.innerHTML = c.map(x => `
+                <tr class="${x.isCarried ? 'carried-row' : ''}">
+                    <td><span class="category-badge category-${x.category}">${x.category}</span></td>
+                    <td style="font-family:'Space Mono',monospace;font-size:0.8rem">${x.containerNum}${x.isCarried ? '<span class="carry-badge">C/F</span>' : ''}</td>
+                    <td>${x.type || '-'}</td>
+                    <td><span class="status-badge status-${(x.status||'').toLowerCase().replace('_','-')}">${STATUS_LABELS[x.status] || x.status}</span></td>
+                    <td>${formatDate(x.arrivalDate)}</td>
+                    <td>${x.carrier || '-'}</td>
+                    <td>${formatDate(x.expectedReturn)}</td>
+                    <td><div class="row-actions">
+                        <button class="action-btn" onclick="duplicateContainer('${x.id}')" title="Duplicate">📋</button>
+                        <button class="action-btn" onclick="editContainer('${x.id}')" title="Edit">✏️</button>
+                        <button class="action-btn" onclick="deleteContainer('${x.id}')" title="Delete">🗑️</button>
+                    </div></td>
+                </tr>
+            `).join('');
+        }
+        
+        function renderCategoryTable(cat, containers) {
+            const catC = containers.filter(c => c.category === cat);
+            const tbody = document.getElementById(`${cat}-tbody`);
+            
+            if (catC.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="12" class="empty-state"><div class="empty-state-icon">📭</div>No containers</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = catC.map(x => {
+                const isGenProj = cat === 'general' || cat === 'projects';
+                const isFood = cat === 'food';
+                
+                let contents = '-';
+                if (isFood && Array.isArray(x.contents)) {
+                    contents = x.contents.map(c => c === 'Frozen' ? '❄️' : c === 'Dairy' ? '🥛' : c === 'Produce' ? '🥬' : '🛒').join(' ') || '-';
+                } else if (isGenProj) {
+                    contents = (x.contentsSummary || '-').substring(0, 25);
+                }
+                
+                if (isGenProj) {
+                    return `<tr class="${x.isCarried ? 'carried-row' : ''}">
+                        <td>${formatDate(x.whReleaseDate)}</td>
+                        <td>${formatDate(x.prealertDate)}</td>
+                        <td>${formatDate(x.arrivalDate)}</td>
+                        <td style="font-family:'Space Mono',monospace;font-size:0.75rem">${x.containerNum}${x.isCarried ? '<span class="carry-badge">C/F</span>' : ''}</td>
+                        <td>${x.bol || '-'}</td>
+                        <td>${x.carrier || '-'}</td>
+                        <td>${x.size || '-'}</td>
+                        <td title="${x.contentsSummary || ''}">${contents}</td>
+                        <td><span class="status-badge status-${(x.status||'').toLowerCase().replace('_','-')}">${STATUS_LABELS[x.status] || '-'}</span></td>
+                        <td>${formatDate(x.expectedReturn)}</td>
+                        <td><div class="row-actions"><button class="action-btn" onclick="editContainer('${x.id}')">✏️</button><button class="action-btn" onclick="deleteContainer('${x.id}')">🗑️</button></div></td>
+                    </tr>`;
+                }
+                
+                return `<tr class="${x.isCarried ? 'carried-row' : ''}">
+                    <td>${formatDate(x.prealertDate)}</td>
+                    <td>${formatDate(x.arrivalDate)}</td>
+                    <td style="font-family:'Space Mono',monospace;font-size:0.75rem">${x.containerNum}${x.isCarried ? '<span class="carry-badge">C/F</span>' : ''}</td>
+                    <td>${x.bol || '-'}</td>
+                    <td>${x.carrier || '-'}</td>
+                    <td>${x.size || '-'}</td>
+                    <td>${x.type || '-'}</td>
+                    ${isFood ? `<td>${contents}</td>` : ''}
+                    <td><span class="status-badge status-${(x.status||'').toLowerCase().replace('_','-')}">${STATUS_LABELS[x.status] || '-'}</span></td>
+                    <td>${formatDate(x.expectedReturn)}</td>
+                    <td><div class="row-actions"><button class="action-btn" onclick="editContainer('${x.id}')">✏️</button><button class="action-btn" onclick="deleteContainer('${x.id}')">🗑️</button></div></td>
+                </tr>`;
+            }).join('');
+        }
+        
+        // =============================================
+        // MODAL & FORM
+        // =============================================
+        function openModal(cat = '') {
+            editingId = null;
+            document.getElementById('modal-title').textContent = 'Add Container';
+            document.getElementById('container-form').reset();
+            document.querySelectorAll('#food-contents-section input').forEach(cb => cb.checked = false);
+            if (cat) {
+                document.getElementById('form-category').value = cat;
+                toggleFormFields();
+            }
+            document.getElementById('container-modal').classList.add('active');
+        }
+        
+        function closeModal() {
+            document.getElementById('container-modal').classList.remove('active');
+            editingId = null;
+        }
+        
+        function toggleFormFields() {
+            const cat = document.getElementById('form-category').value;
+            const statusSelect = document.getElementById('form-status');
+            statusSelect.innerHTML = '<option value="">Select</option>';
+            if (cat && STATUS_OPTIONS[cat]) {
+                STATUS_OPTIONS[cat].forEach(s => {
+                    statusSelect.innerHTML += `<option value="${s}">${STATUS_LABELS[s] || s}</option>`;
+                });
+            }
+            
+            const isGenProj = cat === 'general' || cat === 'projects';
+            document.getElementById('warehouse-section').style.display = isGenProj ? 'block' : 'none';
+            document.getElementById('prealert-section').style.display = cat ? 'block' : 'none';
+            document.getElementById('food-contents-section').style.display = cat === 'food' ? 'block' : 'none';
+            document.getElementById('contents-section').style.display = isGenProj ? 'block' : 'none';
+            document.getElementById('contents-title').textContent = cat === 'projects' ? '🔧 Project Details' : '📦 Contents';
+        }
+        
+        function calcExpReturn() {
+            const arr = document.getElementById('form-arrivalDate').value;
+            const freeDays = parseInt(document.getElementById('form-freeDays').value) || 0;
+            if (arr && freeDays > 0) {
+                const d = new Date(arr);
+                d.setDate(d.getDate() + freeDays);
+                document.getElementById('form-expectedReturn').value = d.toISOString().split('T')[0];
+            }
+        }
+        
+        function calcDetentionDays() {
+            const arr = document.getElementById('form-arrivalDate').value;
+            const ret = document.getElementById('form-actualReturn').value;
+            if (arr && ret) {
+                const arrDate = new Date(arr);
+                const retDate = new Date(ret);
+                const days = Math.ceil((retDate - arrDate) / 86400000);
+                document.getElementById('form-detentionDays').value = days > 0 ? days : 0;
+            }
+        }
+        
+        function editContainer(id) {
+            const c = allContainers.find(x => String(x.id) === String(id));
+            if (!c) return;
+            
+            editingId = id;
+            document.getElementById('modal-title').textContent = 'Edit Container';
+            document.getElementById('form-category').value = c.category || '';
+            toggleFormFields();
+            
+            document.getElementById('form-containerNum').value = c.containerNum || '';
+            document.getElementById('form-bol').value = c.bol || '';
+            document.getElementById('form-size').value = c.size || '';
+            document.getElementById('form-type').value = c.type || '';
+            document.getElementById('form-status').value = c.status || '';
+            document.getElementById('form-carrier').value = c.carrier || '';
+            document.getElementById('form-broker').value = c.broker || '';
+            document.getElementById('form-arrivalDate').value = c.arrivalDate || '';
+            document.getElementById('form-freeDays').value = c.freeDays || '';
+            document.getElementById('form-expectedReturn').value = c.expectedReturn || '';
+            document.getElementById('form-actualReturn').value = c.actualReturn || '';
+            document.getElementById('form-detentionDays').value = c.detentionDays || '';
+            document.getElementById('form-invoices').value = c.invoices || '';
+            document.getElementById('form-contentsSummary').value = c.contentsSummary || '';
+            document.getElementById('form-comments').value = c.comments || '';
+            document.getElementById('form-whReleaseDate').value = c.whReleaseDate || '';
+            document.getElementById('form-proposedSailing').value = c.proposedSailing || '';
+            document.getElementById('form-prealertDate').value = c.prealertDate || '';
+            document.getElementById('form-actualSailing').value = c.actualSailing || '';
+            
+            const contents = Array.isArray(c.contents) ? c.contents : [];
+            document.querySelectorAll('#food-contents-section input').forEach(cb => {
+                cb.checked = contents.includes(cb.value);
+            });
+            
+            document.getElementById('container-modal').classList.add('active');
+        }
+        
+        async function saveContainer() {
+            const form = document.getElementById('container-form');
+            if (!form.checkValidity()) { form.reportValidity(); return; }
+            
+            const contents = [];
+            document.querySelectorAll('#food-contents-section input:checked').forEach(cb => contents.push(cb.value));
+            
+            const existing = editingId ? allContainers.find(x => String(x.id) === String(editingId)) : null;
+            
+            const data = {
+                id: editingId || Date.now().toString(),
+                month_key: getMonthKey(),
+                category: document.getElementById('form-category').value,
+                containerNum: document.getElementById('form-containerNum').value,
+                bol: document.getElementById('form-bol').value,
+                size: document.getElementById('form-size').value,
+                type: document.getElementById('form-type').value,
+                status: document.getElementById('form-status').value,
+                carrier: document.getElementById('form-carrier').value,
+                broker: document.getElementById('form-broker').value,
+                arrivalDate: document.getElementById('form-arrivalDate').value,
+                freeDays: parseInt(document.getElementById('form-freeDays').value) || 0,
+                expectedReturn: document.getElementById('form-expectedReturn').value,
+                actualReturn: document.getElementById('form-actualReturn').value,
+                detentionDays: parseInt(document.getElementById('form-detentionDays').value) || 0,
+                invoices: document.getElementById('form-invoices').value,
+                contents: contents,
+                contentsSummary: document.getElementById('form-contentsSummary').value,
+                comments: document.getElementById('form-comments').value,
+                isCarried: existing ? existing.isCarried : false,
+                carriedFrom: existing ? existing.carriedFrom : '',
+                whReleaseDate: document.getElementById('form-whReleaseDate').value,
+                proposedSailing: document.getElementById('form-proposedSailing').value,
+                prealertDate: document.getElementById('form-prealertDate').value,
+                actualSailing: document.getElementById('form-actualSailing').value,
+                lastUpdated: new Date().toISOString()
+            };
+            
+            if (editingId) {
+                const idx = allContainers.findIndex(x => String(x.id) === String(editingId));
+                if (idx >= 0) allContainers[idx] = data;
+            } else {
+                allContainers.push(data);
+            }
+            
+            closeModal();
+            renderAll();
+            await writeToSheets();
+        }
+        
+        function duplicateContainer(id) {
+            const original = allContainers.find(x => String(x.id) === String(id));
+            if (!original) return;
+            
+            editingId = null;
+            document.getElementById('modal-title').textContent = 'Duplicate Container (Enter New # & BOL)';
+            document.getElementById('form-category').value = original.category || '';
+            toggleFormFields();
+            
+            document.getElementById('form-containerNum').value = '';
+            document.getElementById('form-bol').value = '';
+            document.getElementById('form-size').value = original.size || '';
+            document.getElementById('form-type').value = original.type || '';
+            document.getElementById('form-status').value = original.status || '';
+            document.getElementById('form-carrier').value = original.carrier || '';
+            document.getElementById('form-broker').value = original.broker || '';
+            document.getElementById('form-arrivalDate').value = original.arrivalDate || '';
+            document.getElementById('form-freeDays').value = original.freeDays || '';
+            document.getElementById('form-expectedReturn').value = original.expectedReturn || '';
+            document.getElementById('form-actualReturn').value = '';
+            document.getElementById('form-detentionDays').value = '';
+            document.getElementById('form-invoices').value = '';
+            document.getElementById('form-contentsSummary').value = original.contentsSummary || '';
+            document.getElementById('form-comments').value = '';
+            document.getElementById('form-whReleaseDate').value = original.whReleaseDate || '';
+            document.getElementById('form-proposedSailing').value = original.proposedSailing || '';
+            document.getElementById('form-prealertDate').value = original.prealertDate || '';
+            document.getElementById('form-actualSailing').value = original.actualSailing || '';
+            
+            const contents = Array.isArray(original.contents) ? original.contents : [];
+            document.querySelectorAll('#food-contents-section input').forEach(cb => {
+                cb.checked = contents.includes(cb.value);
+            });
+            
+            document.getElementById('container-modal').classList.add('active');
+            setTimeout(() => document.getElementById('form-containerNum').focus(), 100);
+        }
+        
+        async function deleteContainer(id) {
+            if (!confirm('Delete this container?')) return;
+            allContainers = allContainers.filter(x => String(x.id) !== String(id));
+            renderAll();
+            await writeToSheets();
+        }
+        
+        // =============================================
+        // OTHER FUNCTIONS
+        // =============================================
+        function switchTab(tab) {
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`.nav-tab[data-category="${tab}"]`).classList.add('active');
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById(`${tab}-tab`).classList.add('active');
+        }
+        
+        function filterTable(cat) {
+            const term = document.querySelector(`#${cat}-tab .search-box input`).value.toLowerCase();
+            document.querySelectorAll(`#${cat}-tbody tr`).forEach(r => {
+                r.style.display = r.textContent.toLowerCase().includes(term) ? '' : 'none';
+            });
+        }
+        
+        async function carryForward() {
+            // LCL final stage = GOODS_OFFLOADED, Others final stage = RETURNED
+            const curr = getCurrentContainers().filter(c => {
+                if (c.size === 'LCL') {
+                    return c.status !== 'GOODS_OFFLOADED';
+                } else {
+                    return c.status !== 'RETURNED';
+                }
+            });
+            
+            if (curr.length === 0) { alert('No containers to carry forward. All containers have reached final stage.'); return; }
+            
+            const nm = currentMonth === 11 ? 0 : currentMonth + 1;
+            const ny = currentMonth === 11 ? currentYear + 1 : currentYear;
+            const nextKey = `${ny}-${String(nm+1).padStart(2,'0')}`;
+            
+            if (!confirm(`Carry ${curr.length} containers to ${MONTHS[nm]} ${ny}?`)) return;
+            
+            const existingNums = new Set(allContainers.filter(c => c.month_key === nextKey).map(c => c.containerNum));
+            
+            curr.filter(c => !existingNums.has(c.containerNum)).forEach(c => {
+                allContainers.push({
+                    ...c,
+                    id: Date.now().toString() + Math.random(),
+                    month_key: nextKey,
+                    isCarried: true,
+                    carriedFrom: `${MONTHS[currentMonth]} ${currentYear}`,
+                    lastUpdated: new Date().toISOString()
+                });
+            });
+            
+            await writeToSheets();
+            document.getElementById('month-select').value = nm;
+            document.getElementById('year-select').value = ny;
+            changeMonth();
+            alert(`Carried forward to ${MONTHS[nm]} ${ny}`);
+        }
+        
+        function generateReport() {
+            const c = getCurrentContainers();
+            if (c.length === 0) { alert('No containers for this month.'); return; }
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+            const pageWidth = 210;
+            const margin = 14;
+            let y = 15;
+            
+            const catColors = {
+                food: [230, 126, 34],
+                beverage: [155, 89, 182],
+                water: [52, 152, 219],
+                general: [26, 188, 156],
+                projects: [231, 76, 60]
+            };
+            
+            const catLabels = {
+                food: 'FOOD',
+                beverage: 'BEVERAGE', 
+                water: 'WATER',
+                general: 'GENERAL STORES',
+                projects: 'PROJECTS'
+            };
+            
+            // Header
+            doc.setFillColor(15, 76, 117);
+            doc.rect(0, 0, pageWidth, 35, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(20);
+            doc.setFont('helvetica', 'bold');
+            doc.text('BEACHES TURKS & CAICOS', pageWidth / 2, 12, { align: 'center' });
+            doc.setFontSize(14);
+            doc.text('Monthly Container Status Report', pageWidth / 2, 20, { align: 'center' });
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`${MONTHS[currentMonth]} ${currentYear}`, pageWidth / 2, 27, { align: 'center' });
+            doc.setFontSize(9);
+            doc.text(`Generated: ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`, pageWidth / 2, 32, { align: 'center' });
+            
+            y = 45;
+            doc.setTextColor(0, 0, 0);
+            
+            // Executive Summary
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(15, 76, 117);
+            doc.text('EXECUTIVE SUMMARY', margin, y);
+            y += 8;
+            
+            const totalContainers = c.length;
+            const carriedFwd = c.filter(x => x.isCarried).length;
+            const newThisMonth = c.filter(x => !x.isCarried).length;
+            const returned = c.filter(x => x.status === 'RETURNED').length;
+            const lclCompleted = c.filter(x => x.size === 'LCL' && x.status === 'GOODS_OFFLOADED').length;
+            const pending = c.filter(x => {
+                if (x.size === 'LCL') return x.status !== 'GOODS_OFFLOADED';
+                return x.status !== 'RETURNED';
+            }).length;
+            
+            doc.autoTable({
+                startY: y,
+                head: [['Total', 'Carried Fwd', 'New', 'Returned', 'LCL Completed', 'Pending']],
+                body: [[totalContainers, carriedFwd, newThisMonth, returned, lclCompleted, pending]],
+                theme: 'grid',
+                headStyles: { fillColor: [0, 168, 204], fontSize: 9, fontStyle: 'bold' },
+                bodyStyles: { fontSize: 10, halign: 'center', fontStyle: 'bold' },
+                margin: { left: margin, right: margin }
+            });
+            
+            y = doc.lastAutoTable.finalY + 10;
+            
+            // Category breakdown
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(15, 76, 117);
+            doc.text('CATEGORY BREAKDOWN', margin, y);
+            y += 6;
+            
+            const catData = ['food', 'beverage', 'water', 'general', 'projects'].map(cat => {
+                const catC = c.filter(x => x.category === cat);
+                return [
+                    catLabels[cat],
+                    catC.length,
+                    catC.filter(x => x.status === 'RETURNED').length,
+                    catC.filter(x => x.size === 'LCL' && x.status === 'GOODS_OFFLOADED').length,
+                    catC.filter(x => {
+                        if (x.size === 'LCL') return x.status !== 'GOODS_OFFLOADED';
+                        return x.status !== 'RETURNED';
+                    }).length
+                ];
+            });
+            
+            doc.autoTable({
+                startY: y,
+                head: [['Category', 'Total', 'Returned', 'LCL Done', 'Pending']],
+                body: catData,
+                theme: 'striped',
+                headStyles: { fillColor: [15, 76, 117], fontSize: 9 },
+                bodyStyles: { fontSize: 9 },
+                margin: { left: margin, right: margin }
+            });
+            
+            y = doc.lastAutoTable.finalY + 12;
+            
+            // Detention Alerts
+            const today = new Date();
+            const overdueContainers = c.filter(x => {
+                if (x.size === 'LCL' && x.status === 'GOODS_OFFLOADED') return false;
+                if (x.status === 'RETURNED') return false;
+                if (!x.expectedReturn) return false;
+                return new Date(x.expectedReturn) < today;
+            });
+            
+            if (overdueContainers.length > 0) {
+                if (y > 250) { doc.addPage(); y = 15; }
+                
+                doc.setFillColor(231, 76, 60);
+                doc.rect(margin, y - 5, pageWidth - (margin * 2), 8, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(11);
+                doc.setFont('helvetica', 'bold');
+                doc.text(`⚠ DETENTION ALERTS (${overdueContainers.length} OVERDUE)`, margin + 3, y);
+                y += 8;
+                
+                const alertData = overdueContainers.map(x => {
+                    const daysOver = Math.ceil((today - new Date(x.expectedReturn)) / 86400000);
+                    return [x.containerNum, x.category.toUpperCase(), x.carrier, formatDate(x.expectedReturn), `${daysOver} days`];
+                });
+                
+                doc.autoTable({
+                    startY: y,
+                    head: [['Container #', 'Category', 'Carrier', 'Was Due', 'Days Over']],
+                    body: alertData,
+                    theme: 'grid',
+                    headStyles: { fillColor: [231, 76, 60], fontSize: 8 },
+                    bodyStyles: { fontSize: 8 },
+                    margin: { left: margin, right: margin }
+                });
+                
+                y = doc.lastAutoTable.finalY + 12;
+            }
+            
+            // Detailed Container List by Category
+            ['food', 'beverage', 'water', 'general', 'projects'].forEach(cat => {
+                const catC = c.filter(x => x.category === cat);
+                if (catC.length === 0) return;
+                
+                if (y > 220) { doc.addPage(); y = 15; }
+                
+                // Category Header
+                doc.setFillColor(...catColors[cat]);
+                doc.rect(margin, y - 5, pageWidth - (margin * 2), 10, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(12);
+                doc.setFont('helvetica', 'bold');
+                const icon = cat === 'food' ? '🍽' : cat === 'beverage' ? '🍷' : cat === 'water' ? '💧' : cat === 'general' ? '📦' : '🔧';
+                doc.text(`${catLabels[cat]} (${catC.length} containers)`, margin + 3, y + 1);
+                y += 10;
+                
+                // Container details table
+                const tableData = catC.map(x => {
+                    const contents = Array.isArray(x.contents) && x.contents.length > 0 
+                        ? x.contents.join(', ') 
+                        : (x.contentsSummary || '-');
+                    const isFinal = x.size === 'LCL' ? x.status === 'GOODS_OFFLOADED' : x.status === 'RETURNED';
+                    
+                    return [
+                        x.containerNum + (x.isCarried ? ' (C/F)' : ''),
+                        x.bol || '-',
+                        x.size || '-',
+                        x.type || '-',
+                        STATUS_LABELS[x.status] || x.status || '-',
+                        x.carrier || '-',
+                        x.broker || '-',
+                        formatDate(x.arrivalDate),
+                        x.freeDays || '-',
+                        formatDate(x.expectedReturn),
+                        formatDate(x.actualReturn),
+                        x.detentionDays || '-',
+                        x.invoices || '-'
+                    ];
+                });
+                
+                doc.autoTable({
+                    startY: y,
+                    head: [['Container #', 'BOL', 'Size', 'Type', 'Status', 'Carrier', 'Broker', 'Arrival', 'Free Days', 'Exp Return', 'Act Return', 'Det Days', 'Invoice']],
+                    body: tableData,
+                    theme: 'striped',
+                    headStyles: { fillColor: catColors[cat], fontSize: 6, cellPadding: 1.5 },
+                    bodyStyles: { fontSize: 6, cellPadding: 1.5 },
+                    columnStyles: {
+                        0: { cellWidth: 22 },
+                        1: { cellWidth: 15 },
+                        2: { cellWidth: 12 },
+                        3: { cellWidth: 12 },
+                        4: { cellWidth: 15 },
+                        5: { cellWidth: 18 },
+                        6: { cellWidth: 14 },
+                        7: { cellWidth: 14 },
+                        8: { cellWidth: 10 },
+                        9: { cellWidth: 14 },
+                        10: { cellWidth: 14 },
+                        11: { cellWidth: 10 },
+                        12: { cellWidth: 12 }
+                    },
+                    margin: { left: margin, right: margin }
+                });
+                
+                y = doc.lastAutoTable.finalY + 5;
+                
+                // Additional details for each container (WH Release, Pre-Alert, Contents, Comments)
+                catC.forEach((x, idx) => {
+                    const hasExtra = x.whReleaseDate || x.proposedSailing || x.prealertDate || x.actualSailing || 
+                                     (x.contents && x.contents.length > 0) || x.contentsSummary || x.comments || x.carriedFrom;
+                    
+                    if (hasExtra) {
+                        if (y > 270) { doc.addPage(); y = 15; }
+                        
+                        doc.setFontSize(7);
+                        doc.setFont('helvetica', 'bold');
+                        doc.setTextColor(...catColors[cat]);
+                        doc.text(`${x.containerNum} - Additional Details:`, margin, y);
+                        y += 3;
+                        
+                        doc.setFont('helvetica', 'normal');
+                        doc.setTextColor(60, 60, 60);
+                        
+                        let details = [];
+                        if (x.whReleaseDate) details.push(`WH Release: ${formatDate(x.whReleaseDate)}`);
+                        if (x.proposedSailing) details.push(`Proposed Sailing: ${formatDate(x.proposedSailing)}`);
+                        if (x.prealertDate) details.push(`Pre-Alert: ${formatDate(x.prealertDate)}`);
+                        if (x.actualSailing) details.push(`Actual Sailing: ${formatDate(x.actualSailing)}`);
+                        if (x.contents && x.contents.length > 0) details.push(`Contents: ${x.contents.join(', ')}`);
+                        if (x.contentsSummary) details.push(`Summary: ${x.contentsSummary}`);
+                        if (x.comments) details.push(`Notes: ${x.comments}`);
+                        if (x.carriedFrom) details.push(`Carried From: ${x.carriedFrom}`);
+                        
+                        doc.setFontSize(6);
+                        doc.text(details.join('  |  '), margin + 2, y);
+                        y += 5;
+                    }
+                });
+                
+                y += 5;
+            });
+            
+            // Footer on all pages
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(128, 128, 128);
+                doc.text(`Page ${i} of ${pageCount}`, pageWidth / 2, 290, { align: 'center' });
+                doc.text('Beaches Turks & Caicos | Cost Control Department | Container Portal', pageWidth / 2, 295, { align: 'center' });
+            }
+            
+            // Save
+            doc.save(`Container_Report_${MONTHS[currentMonth]}_${currentYear}.pdf`);
+        }
+        
+        function exportCSV() { alert('CSV export coming soon!'); }
+        
+        function formatDate(d) { return d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '-'; }
+        function showLoading(text) { document.getElementById('loading-text').textContent = text; document.getElementById('loading').classList.add('active'); }
+        function hideLoading() { document.getElementById('loading').classList.remove('active'); }
+    </script>
+</body>
+</html>
