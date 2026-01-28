@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notice Board Admin - Beaches TCI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root{--primary:#006D77;--primary-dark:#004E57;--accent:#EDF6F9;--coral:#E29578;--gold:#FFB703;--danger:#e74c3c;--success:#27ae60;--text-dark:#2d3436;--text-light:#636e72}
+        *{margin:0;padding:0;box-sizing:border-box}body{font-family:'Poppins',sans-serif;background:linear-gradient(135deg,#f5f7fa,#e4e8ec);min-height:100vh;color:var(--text-dark)}
+        .header{background:linear-gradient(135deg,var(--primary-dark),var(--primary));padding:0.8rem 1.5rem;display:flex;justify-content:space-between;align-items:center;box-shadow:0 4px 20px rgba(0,0,0,0.2);position:sticky;top:0;z-index:100}
+        .logo{display:flex;align-items:center;gap:0.8rem}.logo-icon{width:45px;height:45px;background:linear-gradient(135deg,var(--gold),var(--coral));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.5rem}
+        .logo-text h1{font-size:1.6rem;color:white}.logo-text span{font-size:0.85rem;color:#83C5BE;letter-spacing:2px}
+        .header-actions{display:flex;align-items:center;gap:0.8rem}.btn-preview{background:var(--gold);color:var(--text-dark);padding:0.5rem 1rem;border-radius:6px;border:none;font-family:'Poppins',sans-serif;font-weight:600;cursor:pointer;font-size:0.9rem}.btn-preview:hover{background:#e5a503}.sync-badge{padding:0.4rem 0.8rem;border-radius:15px;font-size:0.85rem;font-weight:600}
+        .sync-badge.connected{background:rgba(39,174,96,0.2);color:var(--success)}.sync-badge.disconnected{background:rgba(231,76,60,0.2);color:var(--danger)}
+        .auth-btn{padding:0.5rem 1rem;border-radius:6px;border:none;font-family:'Poppins',sans-serif;font-weight:600;cursor:pointer;background:#4285f4;color:white;font-size:0.85rem}.auth-btn:hover{background:#3367d6}.auth-btn.signout{background:#666}
+        .main-container{display:flex;min-height:calc(100vh - 60px)}.sidebar{width:220px;background:white;padding:0.5rem;box-shadow:2px 0 15px rgba(0,0,0,0.1);overflow-y:auto}
+        .sidebar h3{color:var(--text-light);font-size:0.6rem;text-transform:uppercase;letter-spacing:1px;margin:0.5rem 0 0.2rem;padding-left:0.4rem}
+        .nav-item{display:flex;align-items:center;gap:0.4rem;padding:0.45rem 0.6rem;border-radius:6px;cursor:pointer;margin-bottom:0.15rem;transition:all 0.2s;color:var(--text-dark);font-weight:500;font-size:0.85rem}
+        .nav-item:hover{background:var(--accent)}.nav-item.active{background:var(--primary);color:white}.nav-item .icon{font-size:1rem}
+        .nav-item .count{margin-left:auto;background:var(--coral);color:white;padding:0.1rem 0.35rem;border-radius:6px;font-size:0.6rem;font-weight:700}.nav-item.active .count{background:white;color:var(--primary)}
+        .content{flex:1;padding:1.2rem;overflow-y:auto}.content-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
+        .content-header h2{font-size:1.4rem;color:var(--primary-dark)}.btn{padding:0.5rem 0.9rem;border:none;border-radius:6px;font-family:'Poppins',sans-serif;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:0.3rem;font-size:0.95rem}
+        .btn-primary{background:var(--primary);color:white}.btn-primary:hover{background:var(--primary-dark)}.btn-secondary{background:#e0e0e0;color:var(--text-dark)}
+        .card{background:white;border-radius:8px;padding:0.9rem;margin-bottom:0.5rem;box-shadow:0 2px 6px rgba(0,0,0,0.08);display:flex;justify-content:space-between;align-items:center}
+        .card-content h4{font-size:1.1rem;color:var(--text-dark);margin-bottom:0.2rem}.card-content p{color:var(--text-light);font-size:0.95rem}.card-content .meta{display:flex;gap:0.6rem;margin-top:0.35rem;font-size:0.95rem;color:var(--primary);flex-wrap:wrap;font-weight:600}
+        .card-actions{display:flex;gap:0.25rem}.card-actions button{padding:0.3rem 0.45rem;border:none;border-radius:4px;cursor:pointer;font-size:0.75rem}.card-actions .edit{background:var(--accent);color:var(--primary)}.card-actions .delete{background:#ffe0e0;color:var(--danger)}
+        .card.urgent{border-left:3px solid var(--danger)}.card.submitted{border-left:3px solid var(--success);background:rgba(39,174,96,0.05)}.card.inprogress{border-left:3px solid var(--gold);background:rgba(255,183,3,0.05)}.card-photo{width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid var(--coral);margin-right:0.7rem}
+        .card-photo-placeholder{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--coral),var(--gold));display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.8rem;margin-right:0.7rem}
+        .card-photo-emoji{width:45px;height:45px;border-radius:50%;background:linear-gradient(135deg,#FFE066,#FFB347);display:flex;align-items:center;justify-content:center;font-size:1.8rem;margin-right:0.7rem;box-shadow:0 3px 10px rgba(0,0,0,0.15)}
+        .empty-state{text-align:center;padding:2rem;color:var(--text-light)}.empty-state .icon{font-size:2rem;margin-bottom:0.6rem;opacity:0.5}
+        .modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;justify-content:center;align-items:center;backdrop-filter:blur(5px)}.modal-overlay.active{display:flex}
+        .modal{background:white;border-radius:12px;width:90%;max-width:450px;max-height:80vh;overflow-y:auto}.modal-header{padding:0.9rem;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center}
+        .modal-header h3{font-size:1rem;color:var(--primary-dark)}.modal-close{background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--text-light)}.modal-body{padding:0.9rem}
+        .form-group{margin-bottom:0.8rem}.form-group label{display:block;margin-bottom:0.3rem;font-weight:600;color:var(--text-dark);font-size:0.95rem}
+        .form-group input,.form-group textarea,.form-group select{width:100%;padding:0.5rem;border:2px solid #e0e0e0;border-radius:5px;font-family:'Poppins',sans-serif;font-size:0.85rem}
+        .form-group input:focus,.form-group textarea:focus,.form-group select:focus{outline:none;border-color:var(--primary)}.form-row{display:grid;grid-template-columns:1fr 1fr;gap:0.6rem}
+        .checkbox-group{display:flex;align-items:center;gap:0.4rem}.checkbox-group input{width:auto}.modal-footer{padding:0.9rem;border-top:1px solid #eee;display:flex;justify-content:flex-end;gap:0.5rem}
+        .auth-required{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 60px);text-align:center}
+        .auth-required h2{font-size:1.4rem;margin-bottom:0.6rem;color:var(--primary)}.auth-required p{color:var(--text-light);margin-bottom:1.2rem;max-width:300px;font-size:0.9rem}
+        .loading{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.9);z-index:2000;justify-content:center;align-items:center;flex-direction:column}.loading.active{display:flex}
+        .spinner{width:30px;height:30px;border:3px solid #e0e0e0;border-top-color:var(--primary);border-radius:50%;animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}.loading-text{margin-top:0.6rem;color:var(--primary);font-weight:600;font-size:0.85rem}
+        .info-box{background:linear-gradient(135deg,rgba(255,183,3,0.2),rgba(226,149,120,0.2));border:2px solid var(--gold);border-radius:8px;padding:0.9rem;margin-bottom:0.9rem}
+        .info-box p{font-size:0.9rem;color:var(--text-dark);line-height:1.5;font-weight:500}
+    </style>
+</head>
+<body>
+    <div class="loading" id="loading"><div class="spinner"></div><div class="loading-text" id="loading-text">Loading...</div></div>
+    <header class="header">
+        <div class="logo"><div class="logo-icon">📋</div><div class="logo-text"><h1>Notice Board Admin</h1><span>COST CONTROL</span></div></div>
+        <div class="header-actions"><button class="btn-preview" onclick="openPreview()">👁️ Preview Display</button><div class="sync-badge disconnected" id="sync-badge"><span id="sync-text">⚫ Not Connected</span></div><button class="auth-btn" id="auth-btn" onclick="handleAuth()">🔐 Sign In</button></div>
+    </header>
+    <div id="auth-required" class="auth-required"><h2>📋 Notice Board Admin</h2><p>Sign in with Google to manage the Notice Board</p><button class="auth-btn" onclick="handleAuth()">🔐 Sign in with Google</button></div>
+    <div id="app-content" class="main-container" style="display:none">
+        <aside class="sidebar">
+            <h3>General</h3>
+            <div class="nav-item active" data-section="notices" onclick="switchSection('notices')"><span class="icon">📢</span><span>Notices</span><span class="count" id="count-notices">0</span></div>
+            <div class="nav-item" data-section="occupancy" onclick="switchSection('occupancy')"><span class="icon">🏨</span><span>Occupancy</span><span class="count" id="count-occupancy">0</span></div>
+            <div class="nav-item" data-section="dyk" onclick="switchSection('dyk')"><span class="icon">💡</span><span>Did You Know</span><span class="count" id="count-dyk">0</span></div>
+            <h3>Performance</h3>
+            <div class="nav-item" data-section="fbPerformance" onclick="switchSection('fbPerformance')"><span class="icon">💰</span><span>F&B Cost</span><span class="count" id="count-fbPerformance">0</span></div>
+            <div class="nav-item" data-section="utility" onclick="switchSection('utility')"><span class="icon">⚡</span><span>Utility</span><span class="count" id="count-utility">0</span></div>
+            <div class="nav-item" data-section="kpi" onclick="switchSection('kpi')"><span class="icon">📊</span><span>Monthly KPI</span><span class="count" id="count-kpi">0</span></div>
+            <h3>Department</h3>
+            <div class="nav-item" data-section="birthdays" onclick="switchSection('birthdays')"><span class="icon">🎂</span><span>Birthdays</span><span class="count" id="count-birthdays">0</span></div>
+            <div class="nav-item" data-section="deptEvents" onclick="switchSection('deptEvents')"><span class="icon">🎯</span><span>Dept Events</span><span class="count" id="count-deptEvents">0</span></div>
+            <div class="nav-item" data-section="deptTraining" onclick="switchSection('deptTraining')"><span class="icon">👥</span><span>Dept Training</span><span class="count" id="count-deptTraining">0</span></div>
+            <div class="nav-item" data-section="awards" onclick="switchSection('awards')"><span class="icon">🏆</span><span>Prestige Awards</span><span class="count" id="count-awards">0</span></div>
+            <div class="nav-item" data-section="commend" onclick="switchSection('commend')"><span class="icon">🌟</span><span>Big Ups</span><span class="count" id="count-commend">0</span></div>
+            <h3>Resort</h3>
+            <div class="nav-item" data-section="resortEvents" onclick="switchSection('resortEvents')"><span class="icon">📅</span><span>Resort Events</span><span class="count" id="count-resortEvents">0</span></div>
+            <div class="nav-item" data-section="resortTraining" onclick="switchSection('resortTraining')"><span class="icon">📚</span><span>Resort Training</span><span class="count" id="count-resortTraining">0</span></div>
+            <div class="nav-item" data-section="hr" onclick="switchSection('hr')"><span class="icon">📋</span><span>HR Info</span><span class="count" id="count-hr">0</span></div>
+            <div class="nav-item" data-section="security" onclick="switchSection('security')"><span class="icon">🔒</span><span>Security</span><span class="count" id="count-security">0</span></div>
+            <h3>Inventory</h3>
+            <div class="nav-item" data-section="inventory" onclick="switchSection('inventory')"><span class="icon">📦</span><span>Count Schedule</span><span class="count" id="count-inventory">0</span></div>
+        </aside>
+        <main class="content" id="main-content"></main>
+    </div>
+    <div class="modal-overlay" id="modal-overlay"><div class="modal"><div class="modal-header"><h3 id="modal-title">Add Item</h3><button class="modal-close" onclick="closeModal()">×</button></div><div class="modal-body" id="modal-body"></div><div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveItem()">💾 Save</button></div></div></div>
+<script>
+const CONFIG={CLIENT_ID:'1092790933079-0fr8osm6110id36idcvg1g2p2l1qvqi2.apps.googleusercontent.com',API_KEY:'AIzaSyA1mb8gU3EZCRzfMWk8LuQyWiIJYATZFZM',SHEET_ID:'1JO0l5Aaqem1l8S8_6xzQt3-VP25Nxjqwa8A2dJC2l-E',SCOPES:'https://www.googleapis.com/auth/spreadsheets'};
+const SECTIONS={
+    notices:{name:'ImportantNotices',title:'Important Notices',icon:'📢',cols:['id','title','message','date','urgent'],fields:[{id:'title',label:'Title',type:'text',req:1},{id:'message',label:'Message',type:'textarea',req:1},{id:'date',label:'Date',type:'date'},{id:'urgent',label:'Urgent',type:'checkbox'}]},
+    occupancy:{name:'Occupancy',title:'Occupancy',icon:'🏨',cols:['id','date','percentage','arrivals','departures','adults','children','total'],fields:[{id:'date',label:'📅 DATE',type:'date',req:1},{id:'percentage',label:'📊 OCCUPANCY %',type:'number'},{id:'arrivals',label:'✈️ ARRIVALS',type:'number'},{id:'departures',label:'🛫 DEPARTURES',type:'number'},{id:'adults',label:'👨 ADULTS',type:'number'},{id:'children',label:'👶 CHILDREN',type:'number'},{id:'total',label:'👥 TOTAL GUESTS',type:'number'}],info:'🏨 Daily occupancy drives F&B per-guest calculations.'},
+    dyk:{name:'DidYouKnow',title:'Did You Know',icon:'💡',cols:['id','fact','source'],fields:[{id:'fact',label:'Fact',type:'textarea',req:1},{id:'source',label:'Source',type:'text'}]},
+    fbPerformance:{name:'FBPerformance',title:'F&B Performance',icon:'💰',cols:['id','date','guestsToday','guestsMtd','foodTodaySpent','foodTodayBudget','foodMtdSpent','foodMtdBudget','foodPerGuestActual','foodPerGuestBudget','bevTodaySpent','bevTodayBudget','bevMtdSpent','bevMtdBudget','bevPerGuestActual','bevPerGuestBudget'],fields:[{id:'date',label:'📅 DATE',type:'date',req:1},{id:'guestsToday',label:'👥 GUESTS - TODAY',type:'number'},{id:'guestsMtd',label:'👥 GUESTS - MONTH TO DATE',type:'number'},{id:'foodTodaySpent',label:'🍽️ FOOD SPENT - TODAY ($)',type:'number'},{id:'foodTodayBudget',label:'🍽️ FOOD BUDGET - TODAY ($)',type:'number'},{id:'foodMtdSpent',label:'🍽️ FOOD SPENT - MTD ($)',type:'number'},{id:'foodMtdBudget',label:'🍽️ FOOD BUDGET - MTD ($)',type:'number'},{id:'foodPerGuestActual',label:'🍽️ FOOD PER GUEST - ACTUAL ($)',type:'number'},{id:'foodPerGuestBudget',label:'🍽️ FOOD PER GUEST - BUDGET ($)',type:'number'},{id:'bevTodaySpent',label:'🍷 BEVERAGE SPENT - TODAY ($)',type:'number'},{id:'bevTodayBudget',label:'🍷 BEVERAGE BUDGET - TODAY ($)',type:'number'},{id:'bevMtdSpent',label:'🍷 BEVERAGE SPENT - MTD ($)',type:'number'},{id:'bevMtdBudget',label:'🍷 BEVERAGE BUDGET - MTD ($)',type:'number'},{id:'bevPerGuestActual',label:'🍷 BEVERAGE PER GUEST - ACTUAL ($)',type:'number'},{id:'bevPerGuestBudget',label:'🍷 BEVERAGE PER GUEST - BUDGET ($)',type:'number'}],info:'Enter all values. MTD shows month-to-date totals.'},
+    utility:{name:'UtilityUsage',title:'Utility Usage',icon:'⚡',cols:['id','date','roomsToday','roomsMtd','waterToday','waterMtd','waterPerRoom','electricToday','electricMtd','electricPerRoom','propaneToday','propaneMtd','propanePerRoom','dieselToday','dieselMtd','dieselPerRoom'],fields:[{id:'date',label:'📅 DATE',type:'date',req:1},{id:'roomsToday',label:'🏨 ROOMS OCCUPIED - TODAY',type:'number'},{id:'roomsMtd',label:'🏨 ROOMS OCCUPIED - MTD',type:'number'},{id:'waterToday',label:'💧 WATER - TODAY (Litres)',type:'number'},{id:'waterMtd',label:'💧 WATER - MTD (Litres)',type:'number'},{id:'waterPerRoom',label:'💧 WATER - PER ROOM',type:'number'},{id:'electricToday',label:'⚡ ELECTRICITY - TODAY (kWh)',type:'number'},{id:'electricMtd',label:'⚡ ELECTRICITY - MTD (kWh)',type:'number'},{id:'electricPerRoom',label:'⚡ ELECTRICITY - PER ROOM',type:'number'},{id:'propaneToday',label:'🔥 PROPANE - TODAY (Litres)',type:'number'},{id:'propaneMtd',label:'🔥 PROPANE - MTD (Litres)',type:'number'},{id:'propanePerRoom',label:'🔥 PROPANE - PER ROOM',type:'number'},{id:'dieselToday',label:'⛽ DIESEL - TODAY (Litres)',type:'number'},{id:'dieselMtd',label:'⛽ DIESEL - MTD (Litres)',type:'number'},{id:'dieselPerRoom',label:'⛽ DIESEL - PER ROOM',type:'number'}],info:'Enter all values. MTD shows month-to-date totals.'},
+    kpi:{name:'MonthlyKPI',title:'Monthly KPI',icon:'📊',cols:['id','month','kpiName','target','result','met'],fields:[{id:'month',label:'Month',type:'text',req:1},{id:'kpiName',label:'KPI Name',type:'select',req:1,options:['Slow Moving','Food Cost','Beverage Cost','Inventory Days (F&B)','Utilities - Water','Utilities - Electricity']},{id:'target',label:'Target',type:'text',req:1},{id:'result',label:'Result',type:'text',req:1},{id:'met',label:'Status',type:'select',options:['MET','NOT MET']}],info:'Previous month KPI results.'},
+    birthdays:{name:'DeptBirthdays',title:'Dept Birthdays',icon:'🎂',cols:['id','name','jobTitle','date','gender','nationality','photoUrl'],fields:[{id:'name',label:'👤 NAME',type:'text',req:1},{id:'jobTitle',label:'💼 JOB TITLE',type:'text'},{id:'date',label:'🎂 BIRTHDAY DATE',type:'date',req:1},{id:'gender',label:'👫 GENDER',type:'select',options:['Male','Female']},{id:'nationality',label:'🌍 NATIONALITY',type:'text'},{id:'photoUrl',label:'📷 PHOTO URL (optional)',type:'text'}],upload:true,info:'🎂 Upload staff list or add manually. Modern avatars + nationality flags!'},
+    deptEvents:{name:'DeptEvents',title:'Dept Events',icon:'🎯',cols:['id','title','description','date','time','location'],fields:[{id:'title',label:'Title',type:'text',req:1},{id:'description',label:'Description',type:'textarea'},{id:'date',label:'Date',type:'date'},{id:'time',label:'Time',type:'text'},{id:'location',label:'Location',type:'text'}]},
+    deptTraining:{name:'DeptTraining',title:'Dept Training',icon:'👥',cols:['id','trainingName','teamMember','date','time','location','status'],fields:[{id:'trainingName',label:'Training',type:'text',req:1},{id:'teamMember',label:'Team Member',type:'text',req:1},{id:'date',label:'Date',type:'date'},{id:'time',label:'Time',type:'text'},{id:'location',label:'Location',type:'text'},{id:'status',label:'Status',type:'select',options:['Scheduled','Completed','Cancelled']}]},
+    awards:{name:'PrestigeAwards',title:'Prestige Awards Nominees',icon:'🏆',cols:['id','name','jobTitle','writeup','photoUrl'],fields:[{id:'name',label:'Name',type:'text',req:1},{id:'jobTitle',label:'Job Title',type:'text',req:1},{id:'writeup',label:'Write-up',type:'textarea',req:1},{id:'photoUrl',label:'Photo URL',type:'text'}]},
+    commend:{name:'MajorBigUps',title:'Major Big Ups',icon:'🌟',cols:['id','name','jobTitle','message','photoUrl'],fields:[{id:'name',label:'Name',type:'text',req:1},{id:'jobTitle',label:'Job Title',type:'text'},{id:'message',label:'Commendation',type:'textarea',req:1},{id:'photoUrl',label:'Photo URL',type:'text'}]},
+    resortEvents:{name:'ResortEvents',title:'Resort Events',icon:'📅',cols:['id','title','description','date','time','location'],fields:[{id:'title',label:'Title',type:'text',req:1},{id:'description',label:'Description',type:'textarea'},{id:'date',label:'Date',type:'date'},{id:'time',label:'Time',type:'text'},{id:'location',label:'Location',type:'text'}]},
+    resortTraining:{name:'ResortTraining',title:'Resort Training',icon:'📚',cols:['id','title','description','date','time','location'],fields:[{id:'title',label:'Title',type:'text',req:1},{id:'description',label:'Description',type:'textarea'},{id:'date',label:'Date',type:'date'},{id:'time',label:'Time',type:'text'},{id:'location',label:'Location',type:'text'}]},
+    hr:{name:'HRInformation',title:'HR Information',icon:'📋',cols:['id','title','message','date'],fields:[{id:'title',label:'Title',type:'text',req:1},{id:'message',label:'Message',type:'textarea',req:1},{id:'date',label:'Date',type:'date'}]},
+    security:{name:'SecurityTidbits',title:'Security Tidbits',icon:'🔒',cols:['id','title','message','date'],fields:[{id:'title',label:'Title',type:'text',req:1},{id:'message',label:'Message',type:'textarea',req:1},{id:'date',label:'Date',type:'date'}]},
+    inventory:{name:'InventorySchedule',title:'Inventory Count Schedule',icon:'📦',cols:['id','location','locationGroup','countType','scheduledDate','costControl1','costControl2','storeroom','status','notes'],fields:[{id:'location',label:'📍 Location',type:'text',req:1},{id:'locationGroup',label:'📁 Group',type:'text'},{id:'countType',label:'📊 Count Type',type:'select',options:['FULL COUNT','SPOT CHECK','Deferred to Next Month']},{id:'scheduledDate',label:'📅 Scheduled Date',type:'date'},{id:'costControl1',label:'👤 Cost Control 1',type:'text'},{id:'costControl2',label:'👤 Cost Control 2',type:'text'},{id:'storeroom',label:'🏪 Storeroom',type:'text'},{id:'status',label:'📋 Status',type:'select',options:['Not Started','In Progress','Submitted','Deferred']},{id:'notes',label:'📝 Notes',type:'textarea'}],upload:true,info:'📦 Upload Excel file or add items manually. Upload will replace existing data.'}
+};
+let tokenClient,accessToken=null,currentSection='notices',allData={},editingId=null;
+window.onload=()=>{tokenClient=google.accounts.oauth2.initTokenClient({client_id:CONFIG.CLIENT_ID,scope:CONFIG.SCOPES,callback:r=>{if(r.access_token){accessToken=r.access_token;onSignIn()}}})};
+function handleAuth(){accessToken?(accessToken=null,onSignOut()):tokenClient.requestAccessToken()}
+function onSignIn(){document.getElementById('auth-required').style.display='none';document.getElementById('app-content').style.display='flex';document.getElementById('auth-btn').innerHTML='🚪 Sign Out';document.getElementById('auth-btn').classList.add('signout');document.getElementById('sync-badge').className='sync-badge connected';document.getElementById('sync-text').textContent='☁️ Connected';loadAllData()}
+function onSignOut(){document.getElementById('auth-required').style.display='flex';document.getElementById('app-content').style.display='none';document.getElementById('auth-btn').innerHTML='🔐 Sign In';document.getElementById('auth-btn').classList.remove('signout');document.getElementById('sync-badge').className='sync-badge disconnected';document.getElementById('sync-text').textContent='⚫ Not Connected'}
+function switchSection(s){currentSection=s;document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));document.querySelector(`.nav-item[data-section="${s}"]`).classList.add('active');renderSection()}
+async function loadAllData(){showLoading('Loading...');for(const k of Object.keys(SECTIONS)){allData[k]=await fetchSheet(SECTIONS[k].name);document.getElementById(`count-${k}`).textContent=allData[k].length}renderSection();hideLoading()}
+async function fetchSheet(n){try{const r=await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${n}?key=${CONFIG.API_KEY}`,{headers:{Authorization:`Bearer ${accessToken}`}});if(!r.ok)return[];const d=await r.json();if(!d.values||d.values.length<2)return[];const h=d.values[0];return d.values.slice(1).map(row=>{const o={};h.forEach((k,i)=>o[k]=row[i]||'');return o})}catch(e){return[]}}
+async function writeSheet(s){const c=SECTIONS[s],rows=[c.cols];allData[s].forEach(i=>rows.push(c.cols.map(col=>i[col]||'')));try{await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${c.name}:clear`,{method:'POST',headers:{Authorization:`Bearer ${accessToken}`,'Content-Type':'application/json'}});await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${c.name}?valueInputOption=RAW`,{method:'PUT',headers:{Authorization:`Bearer ${accessToken}`,'Content-Type':'application/json'},body:JSON.stringify({range:c.name,majorDimension:'ROWS',values:rows})});document.getElementById('sync-text').textContent='☁️ Saved'}catch(e){alert('Save failed')}}
+function renderSection(){const s=SECTIONS[currentSection],data=allData[currentSection]||[];let info=s.info?`<div class="info-box"><p>${s.info}</p></div>`:'';let uploadBtn=s.upload?`<input type="file" id="upload-file" accept=".xlsx,.xlsm,.xls" style="display:none" onchange="handleFileUpload(event)"><button class="btn btn-secondary" onclick="document.getElementById('upload-file').click()" style="margin-right:0.5rem">📤 Upload Excel</button>`:'';document.getElementById('main-content').innerHTML=`<div class="content-header"><h2>${s.icon} ${s.title}</h2><div>${uploadBtn}<button class="btn btn-primary" onclick="openModal()">➕ Add</button></div></div>${info}<div id="list-${currentSection}">${data.length?data.map(i=>renderCard(i)).join(''):`<div class="empty-state"><div class="icon">${s.icon}</div><p>No items yet</p></div>`}</div>`}
+function renderCard(i){const s=SECTIONS[currentSection];let photo='';if(i.photoUrl&&i.photoUrl.startsWith('http'))photo=`<img src="${i.photoUrl}" class="card-photo" onerror="this.style.display='none'">`;else if(i.photoUrl)photo=`<div class="card-photo-emoji">${i.photoUrl}</div>`;else if(s.cols.includes('photoUrl'))photo=`<div class="card-photo-placeholder">${initials(i.name)}</div>`;let title=i.title||i.name||i.trainingName||i.kpiName||i.location||i.fact?.substring(0,40)||'Item';let subtitle=i.jobTitle||i.teamMember||i.message?.substring(0,50)||i.description?.substring(0,50)||i.countType||'';let meta=[];if(i.date)meta.push(`📅 ${fmtDate(i.date)}`);if(i.scheduledDate&&i.scheduledDate!=='TBA')meta.push(`📅 ${fmtDate(i.scheduledDate)}`);if(i.scheduledDate==='TBA')meta.push(`📅 TBA`);if(i.time)meta.push(`🕐 ${i.time}`);if(i.percentage)meta.push(`📊 ${i.percentage}%`);if(i.month)meta.push(`📆 ${i.month}`);if(i.target)meta.push(`🎯 ${i.target}`);if(i.locationGroup)meta.push(`📁 ${i.locationGroup}`);if(i.costControl1)meta.push(`👤 ${i.costControl1}${i.costControl2?', '+i.costControl2:''}`);if(i.status&&currentSection==='inventory')meta.push(`📋 ${i.status}`);if(i.gender)meta.push(`👫 ${i.gender}`);return`<div class="card ${i.urgent==='TRUE'?'urgent':''} ${i.status==='Submitted'?'submitted':''} ${i.status==='In Progress'?'inprogress':''}"><div style="display:flex;align-items:center">${photo}<div class="card-content"><h4>${s.icon} ${title}</h4><p>${subtitle}</p>${meta.length?`<div class="meta">${meta.map(m=>`<span>${m}</span>`).join('')}</div>`:''}</div></div><div class="card-actions"><button class="edit" onclick="editItem('${i.id}')">✏️</button><button class="delete" onclick="deleteItem('${i.id}')">🗑️</button></div></div>`}
+function openModal(id=null){editingId=id;const s=SECTIONS[currentSection],item=id?allData[currentSection].find(i=>i.id===id):{};document.getElementById('modal-title').textContent=id?'Edit':'Add '+s.title;document.getElementById('modal-body').innerHTML=s.fields.map(f=>{const v=item[f.id]||'';if(f.type==='textarea')return`<div class="form-group"><label>${f.label}${f.req?' *':''}</label><textarea id="form-${f.id}" rows="3"${f.req?' required':''}>${v}</textarea></div>`;if(f.type==='checkbox')return`<div class="form-group"><div class="checkbox-group"><input type="checkbox" id="form-${f.id}"${v==='TRUE'?' checked':''}><label>${f.label}</label></div></div>`;if(f.type==='select')return`<div class="form-group"><label>${f.label}${f.req?' *':''}</label><select id="form-${f.id}"${f.req?' required':''}><option value="">-- Select --</option>${f.options.map(o=>`<option value="${o}"${v===o?' selected':''}>${o}</option>`).join('')}</select></div>`;return`<div class="form-group"><label>${f.label}${f.req?' *':''}</label><input type="${f.type}" id="form-${f.id}" value="${v}"${f.req?' required':''}></div>`}).join('');document.getElementById('modal-overlay').classList.add('active')}
+function closeModal(){document.getElementById('modal-overlay').classList.remove('active');editingId=null}
+async function saveItem(){const s=SECTIONS[currentSection],item={id:editingId||Date.now().toString()};s.fields.forEach(f=>{const el=document.getElementById('form-'+f.id);item[f.id]=f.type==='checkbox'?(el.checked?'TRUE':'FALSE'):el.value});if(editingId){const idx=allData[currentSection].findIndex(i=>i.id===editingId);if(idx>=0)allData[currentSection][idx]=item}else{allData[currentSection].push(item)}closeModal();showLoading('Saving...');await writeSheet(currentSection);document.getElementById(`count-${currentSection}`).textContent=allData[currentSection].length;renderSection();hideLoading()}
+function editItem(id){openModal(id)}
+async function deleteItem(id){if(!confirm('Delete?'))return;allData[currentSection]=allData[currentSection].filter(i=>i.id!==id);showLoading('Deleting...');await writeSheet(currentSection);document.getElementById(`count-${currentSection}`).textContent=allData[currentSection].length;renderSection();hideLoading()}
+function fmtDate(d){return d?new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric'}):'-'}
+function initials(n){return n?n.split(' ').map(x=>x[0]).join('').toUpperCase().slice(0,2):'?'}
+function showLoading(t){document.getElementById('loading-text').textContent=t;document.getElementById('loading').classList.add('active')}
+function hideLoading(){document.getElementById('loading').classList.remove('active')}
+function openPreview(){window.open('Department%20Notice%20Board%20-%20Beaches%20TCI.html','_blank')}
+async function handleFileUpload(e){
+    const file=e.target.files[0];if(!file)return;
+    showLoading('Reading file...');
+    try{
+        const data=await file.arrayBuffer();
+        const wb=XLSX.read(data,{type:'array',cellDates:true});
+        const ws=wb.Sheets[wb.SheetNames[0]];
+        const json=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+        
+        if(currentSection==='birthdays'){
+            // Parse birthday/staff list
+            const items=[];
+            
+            for(let i=0;i<json.length;i++){
+                const row=json[i];
+                if(!row||!row[0])continue;
+                const firstCell=String(row[0]).trim();
+                
+                // Skip header row
+                if(firstCell.toLowerCase().includes('employee')||firstCell.toLowerCase().includes('name')&&i===0)continue;
+                
+                // Parse date - handle various formats
+                let birthDate='';
+                if(row[2]){
+                    if(row[2] instanceof Date){
+                        birthDate=row[2].toISOString().split('T')[0];
+                    }else{
+                        const dateStr=String(row[2]).trim();
+                        const parsed=new Date(dateStr);
+                        if(!isNaN(parsed))birthDate=parsed.toISOString().split('T')[0];
+                    }
+                }
+                
+                // Determine gender
+                const genderCell=String(row[4]||'').trim().toLowerCase();
+                let gender='Male'; // default
+                if(genderCell==='female'||genderCell==='f')gender='Female';
+                else if(genderCell==='male'||genderCell==='m')gender='Male';
+                else if(genderCell===''||genderCell==='gender'){
+                    const name=firstCell.toLowerCase();
+                    if(name.endsWith('a')||name.endsWith('e')||name.endsWith('lyn')||name.endsWith('een')||name.endsWith('ia')||name.includes('karen')||name.includes('nordia')||name.includes('kassandra')||name.includes('deidra')||name.includes('dennise')||name.includes('erline')||name.includes('juvilyn')||name.includes('ruthann')||name.includes('wood'))gender='Female';
+                }
+                
+                // Get nationality and flag
+                const nationality=String(row[3]||'').trim();
+                const flags={
+                    'jamaican':'🇯🇲','ghanaian':'🇬🇭','haitian':'🇭🇹','filipino':'🇵🇭',
+                    'dominican':'🇩🇴','saint lucian':'🇱🇨','turks & caicos islander':'🇹🇨',
+                    'turks and caicos':'🇹🇨','american':'🇺🇸','british':'🇬🇧','canadian':'🇨🇦'
+                };
+                const flag=flags[nationality.toLowerCase()]||'🌍';
+                
+                // Generate modern human-like avatar using DiceBear "personas" style
+                const seed=encodeURIComponent(firstCell.replace(/\s+/g,''));
+                const avatarStyle=gender==='Female'?'personas':'personas';
+                const bgColors=['b6e3f4','c0aede','d1d4f9','ffd5dc','ffdfbf'];
+                const bgColor=bgColors[Math.floor(Math.random()*bgColors.length)];
+                const avatarUrl=`https://api.dicebear.com/7.x/personas/svg?seed=${seed}&backgroundColor=${bgColor}`;
+                
+                if(firstCell&&birthDate){
+                    items.push({
+                        id:Date.now().toString()+'-'+i,
+                        name:firstCell,
+                        jobTitle:'Cost Control '+flag,
+                        date:birthDate,
+                        gender:gender,
+                        nationality:nationality,
+                        photoUrl:avatarUrl
+                    });
+                }
+            }
+            
+            if(items.length===0){alert('No birthdays found in file');hideLoading();return;}
+            
+            allData.birthdays=items;
+            showLoading('Saving to Google Sheets...');
+            await writeSheet('birthdays');
+            document.getElementById('count-birthdays').textContent=items.length;
+            renderSection();
+            hideLoading();
+            alert(`✅ Uploaded ${items.length} birthdays with modern avatars!`);
+        }else if(currentSection==='inventory'){
+            // Parse inventory schedule
+            const items=[];let currentGroup='';
+            for(let i=0;i<json.length;i++){
+                const row=json[i];
+                if(!row||!row[0])continue;
+                const firstCell=String(row[0]).trim();
+                
+                if(firstCell.includes('BEACHES')||firstCell.includes('WAREHOUSE')||firstCell.includes('INVENTORY LOCATION')||firstCell.match(/^[A-Z]+-\d{4}$/))continue;
+                
+                if(firstCell.startsWith('LOCATION:')){
+                    currentGroup=firstCell.replace('LOCATION:','').trim();
+                    continue;
+                }
+                
+                if(['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'].some(m=>firstCell.toUpperCase().includes(m))&&!row[1])continue;
+                
+                const scheduledDate=row[2]?(row[2] instanceof Date?row[2].toISOString().split('T')[0]:(String(row[2])==='TBA'?'TBA':'')):'' ;
+                items.push({
+                    id:Date.now().toString()+'-'+i,
+                    location:firstCell,
+                    locationGroup:currentGroup,
+                    countType:row[1]||'',
+                    scheduledDate:scheduledDate,
+                    costControl1:row[3]||'',
+                    costControl2:row[4]||'',
+                    storeroom:row[5]||'',
+                    status:row[6]||'Not Started',
+                    notes:row[7]||''
+                });
+            }
+            
+            if(items.length===0){alert('No inventory items found in file');hideLoading();return;}
+            
+            allData.inventory=items;
+            showLoading('Saving to Google Sheets...');
+            await writeSheet('inventory');
+            document.getElementById('count-inventory').textContent=items.length;
+            renderSection();
+            hideLoading();
+            alert(`✅ Uploaded ${items.length} inventory items!`);
+        }
+    }catch(err){
+        console.error(err);
+        hideLoading();
+        alert('Error reading file: '+err.message);
+    }
+    e.target.value='';
+}
+</script>
+</body>
+</html>
